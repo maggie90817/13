@@ -424,6 +424,16 @@
                     <button class="btn btn-success" onclick="switchBusiness('craft')">
                         🎨 手工藝品事業
                     </button>
+                    <button class="btn btn-info" onclick="backupData()">
+                        💾 備份資料
+                    </button>
+                    <label class="btn btn-warning" for="restore-file">
+                        📁 還原資料
+                    </label>
+                    <input type="file" id="restore-file" accept=".json" onchange="restoreData(event)" style="display: none;">
+                    <button class="btn btn-coral" onclick="clearAllData()">
+                        🗑️ 清除資料
+                    </button>
                 </div>
             </div>
         </div>
@@ -437,7 +447,7 @@
                         <div class="view-nav">
                             <button class="btn btn-info" onclick="switchView('studio', 'dashboard')">📊 財務概況</button>
                             <button class="btn btn-warning" onclick="switchView('studio', 'transactions')">📋 帳務明細</button>
-                            <button class="btn btn-coral" onclick="exportToExcel('studio')">📁 匯出Excel</button>
+                            <button class="btn btn-coral" onclick="exportToExcel('studio')">📄 匯出Excel</button>
                         </div>
                     </div>
                 </div>
@@ -534,7 +544,7 @@
                             <button class="btn btn-info" onclick="switchView('craft', 'dashboard')">📊 營運概況</button>
                             <button class="btn btn-warning" onclick="switchView('craft', 'transactions')">💰 收支記錄</button>
                             <button class="btn btn-primary" onclick="switchView('craft', 'inventory')">📦 庫存管理</button>
-                            <button class="btn btn-coral" onclick="exportToExcel('craft')">📁 匯出Excel</button>
+                            <button class="btn btn-coral" onclick="exportToExcel('craft')">📄 匯出Excel</button>
                         </div>
                     </div>
                 </div>
@@ -642,26 +652,143 @@
     </div>
 
     <script>
-        // 資料儲存
-        let studioTransactions = [
-            { id: 1, type: 'income', account: '攝影服務收入', amount: 35000, description: '張先生婚禮攝影服務', date: '2025-09-15', invoice: 'INV-2025-001' },
-            { id: 2, type: 'expense', account: '租金支出', amount: 15000, description: '9月份工作室租金', date: '2025-09-01', invoice: 'EXP-2025-002' },
-            { id: 3, type: 'income', account: '攝影服務收入', amount: 25000, description: '產品攝影專案', date: '2025-09-12', invoice: 'INV-2025-002' },
-            { id: 4, type: 'expense', account: '設備費用', amount: 8000, description: '專業燈光設備租借', date: '2025-09-14', invoice: 'EXP-2025-001' }
-        ];
+        // 資料儲存和本地存儲功能
+        let studioTransactions = [];
+        let craftTransactions = [];
+        let inventory = [];
 
-        let craftTransactions = [
-            { id: 1, type: 'income', account: '商品銷售收入', amount: 1200, description: '手工髮圈銷售', date: '2025-09-16' },
-            { id: 2, type: 'expense', account: '原料成本', amount: 300, description: '髮圈製作材料', date: '2025-09-10' },
-            { id: 3, type: 'income', account: '商品銷售收入', amount: 2800, description: '手作洋裝銷售', date: '2025-09-08' },
-            { id: 4, type: 'expense', account: '原料成本', amount: 800, description: '布料和配件', date: '2025-09-05' }
-        ];
+        // 從localStorage載入資料
+        function loadData() {
+            const savedStudioTransactions = localStorage.getItem('studioTransactions');
+            const savedCraftTransactions = localStorage.getItem('craftTransactions');
+            const savedInventory = localStorage.getItem('inventory');
 
-        let inventory = [
-            { id: 1, name: '復古風髮圈', category: '手工飾品', quantity: 15, cost: 80, price: 180 },
-            { id: 2, name: '蕾絲連身裙', category: '服飾', quantity: 5, cost: 400, price: 1200 },
-            { id: 3, name: '手工耳環', category: '手工飾品', quantity: 20, cost: 50, price: 150 }
-        ];
+            if (savedStudioTransactions) {
+                studioTransactions = JSON.parse(savedStudioTransactions);
+            } else {
+                // 預設資料
+                studioTransactions = [
+                    { id: 1, type: 'income', account: '攝影服務收入', amount: 35000, description: '張先生婚禮攝影服務', date: '2025-09-15', invoice: 'INV-2025-001' },
+                    { id: 2, type: 'expense', account: '租金支出', amount: 15000, description: '9月份工作室租金', date: '2025-09-01', invoice: 'EXP-2025-002' },
+                    { id: 3, type: 'income', account: '攝影服務收入', amount: 25000, description: '產品攝影專案', date: '2025-09-12', invoice: 'INV-2025-002' },
+                    { id: 4, type: 'expense', account: '設備費用', amount: 8000, description: '專業燈光設備租借', date: '2025-09-14', invoice: 'EXP-2025-001' }
+                ];
+                saveStudioTransactions();
+            }
+
+            if (savedCraftTransactions) {
+                craftTransactions = JSON.parse(savedCraftTransactions);
+            } else {
+                // 預設資料
+                craftTransactions = [
+                    { id: 1, type: 'income', account: '商品銷售收入', amount: 1200, description: '手工髮圈銷售', date: '2025-09-16' },
+                    { id: 2, type: 'expense', account: '原料成本', amount: 300, description: '髮圈製作材料', date: '2025-09-10' },
+                    { id: 3, type: 'income', account: '商品銷售收入', amount: 2800, description: '手作洋裝銷售', date: '2025-09-08' },
+                    { id: 4, type: 'expense', account: '原料成本', amount: 800, description: '布料和配件', date: '2025-09-05' }
+                ];
+                saveCraftTransactions();
+            }
+
+            if (savedInventory) {
+                inventory = JSON.parse(savedInventory);
+            } else {
+                // 預設資料
+                inventory = [
+                    { id: 1, name: '復古風髮圈', category: '手工飾品', quantity: 15, cost: 80, price: 180 },
+                    { id: 2, name: '蕾絲連身裙', category: '服飾', quantity: 5, cost: 400, price: 1200 },
+                    { id: 3, name: '手工耳環', category: '手工飾品', quantity: 20, cost: 50, price: 150 }
+                ];
+                saveInventory();
+            }
+        }
+
+        // 保存資料到localStorage
+        function saveStudioTransactions() {
+            localStorage.setItem('studioTransactions', JSON.stringify(studioTransactions));
+        }
+
+        function saveCraftTransactions() {
+            localStorage.setItem('craftTransactions', JSON.stringify(craftTransactions));
+        }
+
+        function saveInventory() {
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+        }
+
+        // 備份資料功能
+        function backupData() {
+            const backupData = {
+                studioTransactions,
+                craftTransactions,
+                inventory,
+                backupDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `雙事業管理系統備份_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            alert('資料備份已下載完成！');
+        }
+
+        // 還原資料功能
+        function restoreData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    if (confirm('確定要還原資料嗎？這將覆蓋現有的所有資料！')) {
+                        studioTransactions = backupData.studioTransactions || [];
+                        craftTransactions = backupData.craftTransactions || [];
+                        inventory = backupData.inventory || [];
+                        
+                        saveStudioTransactions();
+                        saveCraftTransactions();
+                        saveInventory();
+                        
+                        // 重新載入當前視圖
+                        if (currentBusiness && currentView) {
+                            switchView(currentBusiness, currentView);
+                        }
+                        
+                        alert('資料還原成功！');
+                    }
+                } catch (error) {
+                    alert('檔案格式錯誤，無法還原資料！');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 清除所有資料功能
+        function clearAllData() {
+            if (confirm('確定要清除所有資料嗎？此操作無法復原！')) {
+                if (confirm('最後確認：這將刪除所有交易記錄和庫存資料！')) {
+                    localStorage.removeItem('studioTransactions');
+                    localStorage.removeItem('craftTransactions');
+                    localStorage.removeItem('inventory');
+                    
+                    studioTransactions = [];
+                    craftTransactions = [];
+                    inventory = [];
+                    
+                    // 重新載入當前視圖
+                    if (currentBusiness && currentView) {
+                        switchView(currentBusiness, currentView);
+                    }
+                    
+                    alert('所有資料已清除！');
+                }
+            }
+        }
 
         // 會計科目設定
         const studioAccounts = {
@@ -693,6 +820,9 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 載入儲存的資料
+            loadData();
+            
             // 設定今日日期
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('studio-date').value = today;
@@ -1017,6 +1147,7 @@
             };
             
             studioTransactions.push(newTransaction);
+            saveStudioTransactions(); // 保存資料
             
             // 清空表單
             document.getElementById('studio-amount').value = '';
@@ -1058,6 +1189,7 @@
             };
             
             craftTransactions.push(newTransaction);
+            saveCraftTransactions(); // 保存資料
             
             // 清空表單
             document.getElementById('craft-amount').value = '';
@@ -1098,6 +1230,7 @@
             };
             
             inventory.push(newItem);
+            saveInventory(); // 保存資料
             
             // 清空表單
             document.getElementById('inventory-name').value = '';
@@ -1121,6 +1254,7 @@
             
             if (business === 'studio') {
                 studioTransactions = studioTransactions.filter(t => t.id !== id);
+                saveStudioTransactions(); // 保存資料
                 if (currentView === 'transactions') {
                     updateStudioTransactions();
                 } else {
@@ -1128,6 +1262,7 @@
                 }
             } else {
                 craftTransactions = craftTransactions.filter(t => t.id !== id);
+                saveCraftTransactions(); // 保存資料
                 if (currentView === 'transactions') {
                     updateCraftTransactions();
                 } else {
@@ -1141,6 +1276,7 @@
             if (!confirm('確定要刪除這個商品嗎？')) return;
             
             inventory = inventory.filter(item => item.id !== id);
+            saveInventory(); // 保存資料
             updateInventory();
             if (currentView === 'dashboard') {
                 updateCraftDashboard();
